@@ -1,0 +1,334 @@
+.map-container {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.map-layers-control {
+    position: absolute;
+    top: 10px;
+    right: 50px;
+    z-index: 1000;
+    background: white;
+    padding: 10px;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    max-width: 300px;
+    max-height: calc(100% - 20px);
+    overflow-y: auto;
+}
+
+.layer-item {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    padding: 8px;
+    background: #f8f9fa;
+    transition: all 0.2s ease;
+}
+
+.layer-item.active {
+    border-color: #2557a7;
+    background: #fff;
+    box-shadow: 0 2px 4px rgba(37, 87, 167, 0.1);
+}
+
+.layer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.layer-title {
+    flex-grow: 1;
+    cursor: pointer;
+    margin-right: 8px;
+}
+
+.layer-actions {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+
+.action-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    font-size: 1rem;
+}
+
+.action-btn:hover {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.draw-btn, .edit-btn {
+    color: #2557a7;
+}
+
+.delete-btn {
+    color: #dc3545;
+}
+
+.delete-btn:hover {
+    background: rgba(220, 53, 69, 0.1);
+}
+
+.layer-header span {
+    font-weight: 500;
+    color: #333;
+    font-size: 0.9rem;
+}
+
+.layer-header input {
+    font-size: 0.9rem;
+    padding: 2px 6px;
+    border: 1px solid #2557a7;
+    border-radius: 4px;
+    width: calc(100% - 30px);
+}
+
+.delete-layer-btn {
+    background: none;
+    border: none;
+    color: #dc3545;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0 6px;
+    margin-left: 4px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.delete-layer-btn:hover {
+    background: #dc3545;
+    color: white;
+}
+
+.layer-settings {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.layer-settings select,
+.layer-settings input {
+    padding: 4px 6px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 0.8rem;
+}
+
+.layer-settings select {
+    flex: 2;
+}
+
+.layer-settings input {
+    flex: 1;
+    width: 60px;
+}
+
+.add-layer-btn {
+    width: 100%;
+    padding: 6px;
+    background: #2557a7;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 0.9rem;
+    margin-top: 8px;
+}
+
+.add-layer-btn:hover {
+    background: #1e4687;
+}
+
+.map-container .leaflet-container {
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+.coordinate-checker {
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 15px;
+}
+
+.coordinate-checker form {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.coordinate-checker input {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    width: 150px;
+}
+
+.coordinate-checker button {
+    padding: 8px 16px;
+    background: #2557a7;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.coordinate-checker button:hover {
+    background: #1e4687;
+}
+
+.result {
+    margin-top: 10px;
+    padding: 15px;
+    border-radius: 4px;
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.adder-info {
+    margin-top: 8px;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 4px;
+}
+
+.json-output {
+    margin-top: 20px;
+}
+
+.toggle-json-btn {
+    padding: 8px 16px;
+    background: #6c757d;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.toggle-json-btn:hover {
+    background: #5a6268;
+}
+
+.json-output pre {
+    margin-top: 10px;
+    padding: 15px;
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    overflow-x: auto;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.selected-area-info {
+    margin-top: 20px;
+    padding: 20px;
+    background: #f5f5f5;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.selected-area-info h3 {
+    margin: 0 0 10px 0;
+    color: #333;
+}
+
+.selected-area-info pre {
+    background: white;
+    padding: 15px;
+    border-radius: 4px;
+    overflow-x: auto;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+@media (max-width: 768px) {
+    .map-layers-control {
+        max-width: calc(100% - 60px);
+    }
+
+    .coordinate-checker form {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .coordinate-checker input {
+        width: 100%;
+    }
+
+    .layer-settings {
+        flex-direction: column;
+    }
+
+    .layer-settings select,
+    .layer-settings input {
+        width: 100%;
+    }
+}
+
+/* Style the draw polygon button container */
+.leaflet-draw.leaflet-control {
+    position: absolute;
+    top: 80px;
+    left: 50%;
+    transform: translateX(calc(-50% - 300px));  /* Much further left to align with layer container */
+    z-index: 1000;
+}
+
+/* Style the draw polygon button itself */
+.leaflet-draw-toolbar a.leaflet-draw-draw-polygon {
+    background-color: #2557a7;
+    border-radius: 4px;
+    color: white;
+    width: auto;
+    height: auto;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    transition: background-color 0.2s ease;
+}
+
+.leaflet-draw-toolbar a.leaflet-draw-draw-polygon:hover {
+    background-color: #1e4687;
+}
+
+/* Remove the default leaflet draw icon and replace with text */
+.leaflet-draw-toolbar a.leaflet-draw-draw-polygon span.sr-only {
+    clip: unset;
+    clip-path: none;
+    height: auto;
+    width: auto;
+    position: static;
+    overflow: visible;
+}
+
+.leaflet-draw-toolbar a.leaflet-draw-draw-polygon:before {
+    display: none;  /* Remove the default icon */
+}
+
+/* Hide the button when active */
+.leaflet-draw-toolbar-button-enabled {
+    display: none !important;
+} 
