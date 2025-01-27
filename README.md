@@ -1,0 +1,2 @@
+Not really sure what this is but here I go. The purpose of the Map Tool Draft, also known as the Service Area Tool, is to create a javascript plugin that users in the BidList platform can use to create and update their service territory. 
+The features of this tool include an open source mapping tool called Leaflet, along with a custom UI for creating different layers to store geospatial territory data along with pricing adders that would be used to determine how a contractor's pricing changes dpeending on the location of a project.
