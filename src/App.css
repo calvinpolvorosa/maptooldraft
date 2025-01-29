@@ -3,24 +3,22 @@
   background-color: #f8f9fa;
 }
 
-.App-header {
-  background-color: #ffffff;
-  padding: 20px;
+.App header {
   text-align: center;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   margin-bottom: 20px;
+  padding: 20px 0;
 }
 
-.App-header h1 {
-  margin: 0;
+.App header h1 {
+  margin: 0 0 10px 0;
   color: #333;
-  font-size: 2rem;
+  font-size: 28px;
 }
 
-.App-header p {
-  margin: 10px 0 0;
+.App header p {
+  margin: 0;
   color: #666;
-  font-size: 1.1rem;
+  font-size: 16px;
 }
 
 main {

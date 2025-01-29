@@ -2,6 +2,7 @@
     padding: 20px;
     max-width: 1200px;
     margin: 0 auto;
+    margin-bottom: 20px;
 }
 
 .map-layers-control {
@@ -18,7 +19,6 @@
     display: flex;
     flex-direction: column;
     pointer-events: all;
-    margin-left: 20px;
 }
 
 /* Create a blocking overlay that extends beyond the control's bounds */
@@ -152,45 +152,6 @@ button {
 
 /* Style the layer items */
 .layer-item {
-    margin-bottom: 12px;
-    background: white;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    padding: 8px;
-}
-
-/* Ensure the last layer item has proper spacing */
-.layer-item:last-child {
-    margin-bottom: 12px;
-}
-
-/* Style scrollbar */
-.layers-wrapper::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-}
-
-.layers-wrapper::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 4px;
-}
-
-.layers-wrapper::-webkit-scrollbar-thumb {
-    background: #888;
-    border-radius: 4px;
-}
-
-.layers-wrapper::-webkit-scrollbar-thumb:hover {
-    background: #555;
-}
-
-/* Firefox scrollbar */
-.layers-wrapper {
-    scrollbar-width: thin;
-    scrollbar-color: #888 #f1f1f1;
-}
-
-.layer-item {
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -199,11 +160,18 @@ button {
     border-radius: 4px;
     background: white;
     transition: all 0.2s ease;
+    cursor: pointer;
+    margin-bottom: 5px;
+}
+
+.layer-item:last-child {
+    margin-bottom: 0;
 }
 
 .layer-item.active {
-    border-color: #4a90e2;
+    border-color: #2557a7;
     background: #f5f8ff;
+    box-shadow: 0 0 0 1px #2557a7;
 }
 
 .layer-header {
@@ -255,9 +223,55 @@ button {
     gap: 8px;
     align-items: center;
     padding: 4px 0;
+    margin-top: 8px;
+    position: relative;
+    z-index: 1001 !important;
+    pointer-events: auto !important;
 }
 
-.layer-controls select,
+/* Add label styling */
+.layer-controls::before {
+    content: "Travel Adder";
+    font-size: 14px;
+    color: #333;
+    margin-right: auto;
+    white-space: nowrap;
+}
+
+.layer-controls select {
+    flex: 0 0 auto;
+    padding: 6px 24px 6px 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    background: white url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e") no-repeat right 4px center !important;
+    background-size: 16px !important;
+    cursor: pointer !important;
+    pointer-events: auto !important;
+    z-index: 9999 !important;
+    position: relative;
+    width: 80px;
+    height: 32px;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    appearance: none !important;
+}
+
+/* Remove focus outline and add custom focus style */
+.layer-controls select:focus {
+    outline: none;
+    border-color: #2557a7;
+    box-shadow: 0 0 0 2px rgba(37, 87, 167, 0.1);
+}
+
+/* Style the options */
+.layer-controls select option {
+    padding: 8px;
+    font-size: 14px;
+    background: white;
+    color: #333;
+}
+
 .layer-controls input {
     padding: 4px 8px;
     border: 1px solid #ddd;
@@ -266,21 +280,24 @@ button {
     background: white;
 }
 
-.layer-controls select {
-    flex: 1;
-    cursor: pointer;
-}
-
 .layer-controls input[type="number"] {
-    width: 80px;
-    text-align: right;
+    /* Remove spinner buttons */
+    -moz-appearance: textfield;
+    appearance: textfield;
 }
 
-.layer-controls select:focus,
-.layer-controls input:focus {
-    border-color: #2557a7;
-    outline: none;
-    box-shadow: 0 0 0 2px rgba(37, 87, 167, 0.1);
+/* Remove spinner for Chrome/Safari/Edge */
+.layer-controls input[type="number"]::-webkit-outer-spin-button,
+.layer-controls input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* Ensure consistent width for 4 digits */
+.layer-controls input[type="number"] {
+    width: 60px;
+    text-align: right;
+    padding-right: 8px;
 }
 
 .action-btn {
@@ -294,8 +311,14 @@ button {
 }
 
 .action-btn.draw-btn {
-    color: #2557a7;
+    color: white;
     border-color: #2557a7;
+    background-color: #2557a7;
+}
+
+.action-btn.draw-btn:hover {
+    background-color: #1e4687;
+    color: white;
 }
 
 .action-btn.edit-btn {
@@ -319,8 +342,8 @@ button {
 }
 
 .action-btn.draw-btn.active {
-    background-color: #2557a7;
-    color: white;
+    background-color: white;
+    color: #2557a7;
 }
 
 .action-btn.edit-btn.active {
@@ -595,45 +618,42 @@ button {
     background-color: #f8f9fa;
 }
 
-/* Position zoom controls in top right */
-/* Remove these styles as we're using Leaflet's built-in zoom control */
-/*
+/* Position zoom controls in top left */
 .leaflet-control-zoom.leaflet-bar.leaflet-control {
     position: absolute;
     top: 10px;
-    right: 320px;
+    left: 10px;
     z-index: 1000;
 }
 
+/* Style the zoom controls */
 .leaflet-control-zoom a {
-    background: white;
-    color: #333;
-    border: 2px solid rgba(0,0,0,0.2);
-    text-decoration: none;
-    text-align: center;
-    display: block;
-    font-size: 22px;
-    font-weight: bold;
-    line-height: 24px;
-    width: 30px;
-    height: 30px;
+    background: white !important;
+    color: #333 !important;
+    border: 2px solid rgba(0,0,0,0.2) !important;
+    width: 30px !important;
+    height: 30px !important;
+    line-height: 26px !important;
+    text-align: center !important;
+    text-decoration: none !important;
+    font-size: 22px !important;
+    font-weight: bold !important;
 }
 
 .leaflet-control-zoom a:first-child {
-    border-top-left-radius: 4px;
-    border-top-right-radius: 4px;
+    border-top-left-radius: 4px !important;
+    border-top-right-radius: 4px !important;
 }
 
 .leaflet-control-zoom a:last-child {
-    border-bottom-left-radius: 4px;
-    border-bottom-right-radius: 4px;
-    border-top: none;
+    border-bottom-left-radius: 4px !important;
+    border-bottom-right-radius: 4px !important;
+    border-top: none !important;
 }
 
 .leaflet-control-zoom a:hover {
-    background: #f4f4f4;
+    background: #f4f4f4 !important;
 }
-*/
 
 /* Style for user location marker */
 /* Remove these unused styles */
@@ -724,39 +744,71 @@ button {
     color: white;
 }
 
-.adder-type-select {
-    flex: 1;
-    padding: 6px 8px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 14px;
-    background: white;
-    cursor: pointer;
+.layer-controls input[type="number"],
+.layer-controls select {
+    pointer-events: all !important;
+    user-select: all !important;
+    -webkit-user-select: all !important;
+    cursor: text !important;
+    background: white !important;
+    opacity: 1 !important;
+    z-index: 9999 !important;
+}
+
+/* Ensure the parent containers don't interfere */
+.layer-controls,
+.layer-item,
+.layers-wrapper {
     pointer-events: auto !important;
-    z-index: 1001;
+}
+
+/* Override any disabled states */
+.layer-controls input[type="number"]:not([disabled]),
+.layer-controls select:not([disabled]) {
+    background-color: white !important;
+    color: #333 !important;
+    border: 1px solid #ddd !important;
+}
+
+/* Ensure focus states work */
+.layer-controls input[type="number"]:focus,
+.layer-controls select:focus {
+    border-color: #2557a7 !important;
+    outline: none !important;
+    box-shadow: 0 0 0 2px rgba(37, 87, 167, 0.1) !important;
+}
+
+/* Update the left menu positioning */
+.map-layers-control.left-menu {
     position: relative;
+    top: auto;
+    right: auto;
+    bottom: auto;
+    left: auto;
+    transform: none;
+    z-index: 1000;
+    width: 600px;
+    margin: 20px auto 0;
 }
 
-.adder-type-select:hover {
-    border-color: #2557a7;
+/* Keep the right menu absolute positioned */
+.map-layers-control.right-menu {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 1000;
 }
 
-.adder-type-select:focus {
-    border-color: #2557a7;
-    outline: none;
-    box-shadow: 0 0 0 2px rgba(37, 87, 167, 0.1);
+/* Hide right menu on screens smaller than 992px */
+@media screen and (max-width: 991px) {
+    .map-layers-control.right-menu {
+        display: none !important;
+    }
 }
 
-/* Ensure the dropdown options are visible and clickable */
-.adder-type-select option {
-    padding: 8px;
-    background: white;
-    color: #333;
+/* Hide left menu on screens larger than or equal to 992px */
+@media screen and (min-width: 992px) {
+    .map-layers-control.left-menu {
+        display: none !important;
+    }
 }
-
-/* Remove any pointer-events interference */
-.layer-controls {
-    position: relative;
-    z-index: 1001;
-    pointer-events: auto !important;
-} 

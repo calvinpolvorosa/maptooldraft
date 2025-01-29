@@ -16,11 +16,11 @@ L.Icon.Default.mergeOptions({
 
 const DEFAULT_LAYER = {
     id: 1,
-    name: 'Service Area 1',
+    name: 'Base Territory',
     adderType: 'percentage',
-    adderAmount: 0,
+    adderAmount: null,
     geoJSON: null,
-    isDrawing: true,
+    isDrawing: false,
     isEditing: false
 };
 
@@ -181,6 +181,7 @@ const MapSelector = () => {
     const [isPlacingPoint, setIsPlacingPoint] = useState(false);
     const [pointCoordinates, setPointCoordinates] = useState(null);
     const mapRef = useRef(null);
+    const [hasFirstPolygon, setHasFirstPolygon] = useState(false);
 
     // Add useEffect to get user's location when component mounts
     useEffect(() => {
@@ -219,28 +220,50 @@ const MapSelector = () => {
         const newId = Math.max(...layers.map(l => l.id)) + 1;
         const newLayer = {
             id: newId,
-            name: `Service Area ${newId}`,
+            name: `Extended Range ${newId - 1}`,
             adderType: 'percentage',
-            adderAmount: 0,
+            adderAmount: 5,
             geoJSON: null,
-            isDrawing: true,
+            isDrawing: false,
             isEditing: false
         };
         setLayers(prevLayers => prevLayers.map(layer => ({
             ...layer,
             isDrawing: false,
-            isEditing: false
+            isEditing: false,
+            ...(layer.id === 1 ? {
+                name: 'Base Territory',
+                adderAmount: null
+            } : {})
         })).concat(newLayer));
         setActiveLayerId(newId);
     };
 
     const updateLayer = (layerId, updates) => {
         setLayers(layers.map(layer =>
-            layer.id === layerId ? { ...layer, ...updates } : layer
+            layer.id === layerId ? {
+                ...layer,
+                ...updates,
+                ...(layer.id === 1 ? {
+                    name: 'Base Territory',
+                    adderAmount: null
+                } : {})
+            } : layer
         ));
     };
 
     const deleteLayer = (layerId) => {
+        // If it's the first layer (Base Territory), just clear its data
+        if (layerId === 1) {
+            updateLayer(layerId, {
+                geoJSON: null,
+                isEditing: false,
+                isDrawing: false
+            });
+            return;
+        }
+        
+        // Otherwise, proceed with normal deletion
         setLayers(layers.filter(layer => layer.id !== layerId));
         if (activeLayerId === layerId) {
             setActiveLayerId(layers[0]?.id || null);
@@ -259,18 +282,17 @@ const MapSelector = () => {
             ...layer,
             isDrawing: layer.id === layerId,
             isEditing: false,
-            // Clear existing geoJSON when starting a new drawing
             geoJSON: layer.id === layerId ? null : layer.geoJSON
         })));
         setActiveLayerId(layerId);
 
-        // Force EditControl to reinitialize
-        const editControl = document.querySelector('.leaflet-draw-draw-polygon');
-        if (editControl) {
-            setTimeout(() => {
+        // Force EditControl to initialize and activate immediately
+        setTimeout(() => {
+            const editControl = document.querySelector('.leaflet-draw-draw-polygon');
+            if (editControl) {
                 editControl.click();
-            }, 100);
-        }
+            }
+        }, 0);
     };
 
     const startEditing = (layerId) => {
@@ -333,9 +355,14 @@ const MapSelector = () => {
             const xj = coordinates[j][0];
             const yj = coordinates[j][1];
 
-            const intersect = ((yi > y) !== (yj > y)) && 
-                (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
-            if (intersect) inside = !inside;
+            // Split the calculation into smaller parts for clarity
+            const yCheck = (yi > y) !== (yj > y);
+            const xIntersect = (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+            const intersect = yCheck && xIntersect;
+            
+            if (intersect) {
+                inside = !inside;
+            }
         }
 
         return inside;
@@ -343,6 +370,13 @@ const MapSelector = () => {
 
     const handleCreated = (e) => {
         const layer = e.layer;
+        layer.setStyle({
+            color: '#2557a7',
+            weight: 3,
+            opacity: 0.8,
+            fillColor: '#f5f8ff',
+            fillOpacity: 0.3
+        });
         const geoJSON = layer.toGeoJSON();
         const targetLayer = layers.find(l => l.isDrawing) || layers.find(l => l.id === activeLayerId);
         
@@ -351,8 +385,8 @@ const MapSelector = () => {
                 geoJSON,
                 isDrawing: false
             });
+            setHasFirstPolygon(true);
             
-            // Add the layer to the FeatureGroup
             const activeRef = featureGroupRefs.current[targetLayer.id];
             if (activeRef) {
                 activeRef.addLayer(layer);
@@ -436,60 +470,89 @@ const MapSelector = () => {
         const isEditing = layer.isEditing;
         const isDrawing = layer.isDrawing;
         
-        // Track whether the draw tool is actually active
-        const [isDrawToolActive, setIsDrawToolActive] = useState(false);
+        const [drawToolActive, setDrawToolActive] = useState(false);
 
-        // Effect to check if draw tool is active
         useEffect(() => {
-            const drawControl = document.querySelector('.leaflet-draw-draw-polygon');
-            setIsDrawToolActive(!!drawControl?.classList.contains('leaflet-draw-toolbar-button-enabled'));
-        }, [layer.isDrawing]);
+            const checkDrawToolStatus = () => {
+                const drawControl = document.querySelector('.leaflet-draw-draw-polygon');
+                const isEnabled = drawControl?.classList.contains('leaflet-draw-toolbar-button-enabled');
+                // Only set active if this is the current layer and the draw tool is enabled
+                setDrawToolActive(isEnabled && layer.id === activeLayerId);
+            };
+
+            checkDrawToolStatus();
+
+            const observer = new MutationObserver(checkDrawToolStatus);
+            observer.observe(document.body, { 
+                subtree: true, 
+                attributes: true, 
+                attributeFilter: ['class'] 
+            });
+
+            return () => observer.disconnect();
+        }, [isDrawing, layer.id, activeLayerId]); // Add activeLayerId to dependencies
 
         return (
             <div className="layer-actions">
                 {hasPolygon ? (
-                    <button 
-                        className={`action-btn edit-btn ${isEditing ? 'active' : ''}`}
-                        onClick={() => {
-                            if (isEditing) {
-                                finishEditing(layer.id);
-                            } else {
-                                startEditing(layer.id);
-                            }
-                        }}
-                    >
-                        {isEditing ? 'Save' : 'Edit'}
-                    </button>
+                    <>
+                        <button 
+                            className={`action-btn edit-btn ${isEditing ? 'active' : ''}`}
+                            onClick={() => {
+                                if (isEditing) {
+                                    finishEditing(layer.id);
+                                } else {
+                                    startEditing(layer.id);
+                                }
+                            }}
+                        >
+                            {isEditing ? 'Save' : 'Edit'}
+                        </button>
+                        <button 
+                            className={`action-btn delete-btn`}
+                            onClick={() => {
+                                if (window.confirm('Are you sure you want to delete this polygon?')) {
+                                    updateLayer(layer.id, { 
+                                        geoJSON: null,
+                                        isEditing: false,
+                                        isDrawing: false 
+                                    });
+                                }
+                            }}
+                        >
+                            Delete
+                        </button>
+                    </>
                 ) : (
-                    <button 
-                        className={`action-btn draw-btn ${isDrawing ? 'active' : ''}`}
-                        onClick={() => startDrawing(layer.id)}
-                    >
-                        Draw
-                    </button>
+                    <>
+                        <button 
+                            className={`action-btn draw-btn ${(drawToolActive || isDrawing) ? 'active' : ''}`}
+                            onClick={() => startDrawing(layer.id)}
+                        >
+                            Draw
+                        </button>
+                        {hasFirstPolygon && layer.id !== 1 && (
+                            <button 
+                                className={`action-btn ${isDrawing ? 'cancel-btn' : 'delete-btn'}`}
+                                onClick={() => {
+                                    if (isDrawing) {
+                                        // Cancel drawing
+                                        updateLayer(layer.id, { 
+                                            isDrawing: false 
+                                        });
+                                    } else {
+                                        // Delete layer
+                                        if (window.confirm('Are you sure you want to delete this layer?')) {
+                                            deleteLayer(layer.id);
+                                        }
+                                    }
+                                }}
+                            >
+                                {isDrawing ? 'Cancel' : 'Delete'}
+                            </button>
+                        )}
+                    </>
                 )}
-                <button 
-                    className={`action-btn ${(isEditing || isDrawing) ? 'cancel-btn' : 'delete-btn'}`}
-                    onClick={() => {
-                        if (isEditing) {
-                            cancelEditing(layer.id);
-                        } else if (isDrawing) {
-                            updateLayer(layer.id, { 
-                                isDrawing: false 
-                            });
-                        } else if (hasPolygon) {
-                            updateLayer(layer.id, { 
-                                geoJSON: null,
-                                isEditing: false,
-                                isDrawing: false 
-                            });
-                        } else {
-                            deleteLayer(layer.id);
-                        }
-                    }}
-                >
-                    {(isEditing || isDrawing) ? 'Cancel' : 'Delete'}
-                </button>
             </div>
         );
     };
@@ -571,7 +634,7 @@ const MapSelector = () => {
                 center={mapCenter}
                 zoom={13}
                 style={{ height: '500px', width: '100%' }}
-                zoomControl={false}
+                zoomControl={true}
                 doubleClickZoom={false}
             >
                 <RecenterMap position={mapCenter} />
@@ -579,7 +642,7 @@ const MapSelector = () => {
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 />
-                <ZoomControl position="topright" />
+                <ZoomControl position="topleft" />
                 <MapClickHandler 
                     isPlacingPoint={isPlacingPoint}
                     onMapClick={(e) => {
@@ -603,6 +666,18 @@ const MapSelector = () => {
                         ref={element => {
                             if (element) {
                                 featureGroupRefs.current[layer.id] = element;
+                                // Update the style when the layer becomes active/inactive
+                                if (element.getLayers().length > 0) {
+                                    element.getLayers().forEach(polygon => {
+                                        polygon.setStyle({
+                                            color: activeLayerId === layer.id ? '#000000' : '#2557a7', // Black when active, blue when not
+                                            weight: activeLayerId === layer.id ? 4 : 3,  // Slightly thicker when active
+                                            opacity: 0.8,
+                                            fillColor: '#f5f8ff',
+                                            fillOpacity: 0.3
+                                        });
+                                    });
+                                }
                             }
                         }}
                     >
@@ -615,17 +690,17 @@ const MapSelector = () => {
                                     onCancel={cancelEditing}
                                 />
                                 {layer.isDrawing && (
-                                    <EditControl
-                                        position="topright"
-                                        onCreated={handleCreated}
-                                        draw={{
-                                            rectangle: false,
+                            <EditControl
+                                position="topright"
+                                onCreated={handleCreated}
+                                draw={{
+                                    rectangle: false,
                                             polygon: true,
-                                            circle: false,
-                                            circlemarker: false,
-                                            marker: false,
-                                            polyline: false,
-                                        }}
+                                    circle: false,
+                                    circlemarker: false,
+                                    marker: false,
+                                    polyline: false,
+                                }}
                                         edit={false}
                                     />
                                 )}
@@ -636,14 +711,126 @@ const MapSelector = () => {
                 {testPoint && (
                     <Marker position={testPoint} />
                 )}
-                <div className="map-layers-control">
+                <div className="map-layers-control right-menu">
                     <div className="layers-wrapper">
-                        {layers.map(layer => (
-                            <div 
-                                key={layer.id} 
-                                className={`layer-item ${activeLayerId === layer.id ? 'active' : ''}`}
-                            >
-                                <div className="layer-header">
+                    {layers.map(layer => (
+                        <div 
+                            key={layer.id} 
+                            className={`layer-item ${activeLayerId === layer.id ? 'active' : ''}`}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setActiveLayerId(layer.id);
+                                }}
+                        >
+                            <div className="layer-header">
+                                        <input
+                                            type="text"
+                                        className="layer-name-input"
+                                        value={layer.name || ''}
+                                        onChange={(e) => {
+                                            e.stopPropagation();
+                                            updateLayer(layer.id, { name: e.target.value });
+                                        }}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            e.target.focus();
+                                        }}
+                                        onFocus={(e) => {
+                                            e.stopPropagation();
+                                            e.target.select();
+                                        }}
+                                        readOnly={false}
+                                    />
+                                    <LayerActionButton layer={layer} />
+                                </div>
+                                {layer.id !== 1 && (
+                                    <div className="layer-controls">
+                                <input
+                                    type="number"
+                                                value={layer.adderAmount || ''}
+                                                onChange={(e) => {
+                                                    e.stopPropagation();
+                                                    const value = e.target.value;
+                                                    // Limit to 4 digits
+                                                    if (value.length <= 4) {
+                                                        updateLayer(layer.id, { 
+                                                            ...layer,
+                                                            adderAmount: value === '' ? 0 : parseFloat(value) 
+                                                        });
+                                                    }
+                                                }}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    e.target.focus();
+                                                }}
+                                                onFocus={(e) => {
+                                                    e.stopPropagation();
+                                                    e.target.select();
+                                                }}
+                                                maxLength="4"
+                                                min="0"
+                                                max="9999"
+                                                style={{ 
+                                                    pointerEvents: 'auto',
+                                                    userSelect: 'auto',
+                                                    WebkitUserSelect: 'auto'
+                                                }}
+                                            />
+                                            <select 
+                                                value={layer.adderType || 'percentage'}
+                                                onChange={(e) => {
+                                                    e.stopPropagation();
+                                                    updateLayer(layer.id, { 
+                                                        ...layer,
+                                                        adderType: e.target.value 
+                                                    });
+                                                }}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    // Force the select to open
+                                                    e.currentTarget.focus();
+                                                    const evt = document.createEvent('MouseEvents');
+                                                    evt.initMouseEvent('mousedown', true, true, window);
+                                                    e.currentTarget.dispatchEvent(evt);
+                                                }}
+                                                onFocus={(e) => {
+                                                    e.stopPropagation();
+                                                }}
+                                                onBlur={(e) => {
+                                                    e.stopPropagation();
+                                                }}
+                                            >
+                                                <option value="percentage">%</option>
+                                                <option value="perSquare">$/SQ</option>
+                                                <option value="flatFee">Flat Fee $</option>
+                                            </select>
+                                        </div>
+                                    )}
+                            </div>
+                            ))}
+                    </div>
+                    {hasFirstPolygon && (
+                        <div className="button-container">
+                    <button className="add-layer-btn" onClick={createLayer}>
+                                    Add Extended Range
+                                    </button>
+                                </div>
+                    )}
+                </div>
+            </MapContainer>
+
+            <div className="map-layers-control left-menu">
+                <div className="layers-wrapper">
+                {layers.map(layer => (
+                    <div 
+                        key={layer.id} 
+                        className={`layer-item ${activeLayerId === layer.id ? 'active' : ''}`}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setActiveLayerId(layer.id);
+                                }}
+                    >
+                        <div className="layer-header">
                                     <input
                                         type="text"
                                         className="layer-name-input"
@@ -655,7 +842,6 @@ const MapSelector = () => {
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             e.target.focus();
-                                            setActiveLayerId(layer.id);
                                         }}
                                         onFocus={(e) => {
                                             e.stopPropagation();
@@ -664,44 +850,81 @@ const MapSelector = () => {
                                         readOnly={false}
                                     />
                                     <LayerActionButton layer={layer} />
-                                </div>
-                                <div className="layer-controls">
-                                    <select 
-                                        value={layer.adderType || 'percentage'}
-                                        onChange={(e) => {
-                                            e.stopPropagation();
-                                            updateLayer(layer.id, { adderType: e.target.value });
-                                        }}
-                                        onClick={(e) => e.stopPropagation()}
-                                        className="adder-type-select"
-                                    >
-                                        <option value="percentage">%</option>
-                                        <option value="perSquare">/SQ.</option>
-                                        <option value="flatFee">Flat Fee</option>
-                                    </select>
-                                    <input
-                                        type="number"
-                                        value={layer.adderAmount || ''}
-                                        onChange={(e) => {
-                                            e.stopPropagation();
-                                            const value = e.target.value === '' ? 0 : parseFloat(e.target.value);
-                                            updateLayer(layer.id, { adderAmount: value });
-                                        }}
-                                        onFocus={(e) => e.target.select()}
-                                        step="0.01"
-                                        min="0"
-                                    />
-                                </div>
                             </div>
-                        ))}
-                    </div>
-                    <div className="button-container">
-                        <button className="add-layer-btn" onClick={createLayer}>
-                            Add New Service Area
-                        </button>
-                    </div>
+                                {layer.id !== 1 && (
+                                    <div className="layer-controls">
+                                <input
+                                    type="number"
+                                                value={layer.adderAmount || ''}
+                                                onChange={(e) => {
+                                                    e.stopPropagation();
+                                                    const value = e.target.value;
+                                                    // Limit to 4 digits
+                                                    if (value.length <= 4) {
+                                                        updateLayer(layer.id, { 
+                                                            ...layer,
+                                                            adderAmount: value === '' ? 0 : parseFloat(value) 
+                                                        });
+                                                    }
+                                                }}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    e.target.focus();
+                                                }}
+                                                onFocus={(e) => {
+                                                    e.stopPropagation();
+                                                    e.target.select();
+                                                }}
+                                                maxLength="4"
+                                                min="0"
+                                                max="9999"
+                                                style={{ 
+                                                    pointerEvents: 'auto',
+                                                    userSelect: 'auto',
+                                                    WebkitUserSelect: 'auto'
+                                                }}
+                                            />
+                                            <select 
+                                                value={layer.adderType || 'percentage'}
+                                                onChange={(e) => {
+                                                    e.stopPropagation();
+                                                    updateLayer(layer.id, { 
+                                                        ...layer,
+                                                        adderType: e.target.value 
+                                                    });
+                                                }}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    // Force the select to open
+                                                    e.currentTarget.focus();
+                                                    const evt = document.createEvent('MouseEvents');
+                                                    evt.initMouseEvent('mousedown', true, true, window);
+                                                    e.currentTarget.dispatchEvent(evt);
+                                                }}
+                                                onFocus={(e) => {
+                                                    e.stopPropagation();
+                                                }}
+                                                onBlur={(e) => {
+                                                    e.stopPropagation();
+                                                }}
+                                            >
+                                                <option value="percentage">%</option>
+                                                <option value="perSquare">$/SQ</option>
+                                                <option value="flatFee">Flat Fee $</option>
+                                            </select>
+                                        </div>
+                                    )}
+                            </div>
+                            ))}
+                        </div>
+                        {hasFirstPolygon && (
+                            <div className="button-container">
+                    <button className="add-layer-btn" onClick={createLayer}>
+                                    Add Extended Range
+                    </button>
                 </div>
-            </MapContainer>
+                        )}
+                    </div>
 
             <div className="coordinate-checker">
                 <form onSubmit={checkCoordinate}>
@@ -774,4 +997,4 @@ const MapSelector = () => {
     );
 };
 
-export default MapSelector;
+export default MapSelector; 
